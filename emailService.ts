@@ -109,6 +109,21 @@ class EmailService {
 
     return result;
   }
+  async parsedBodyEmailJustConnect(body: string): Promise<emailOutput> {
+    // Удаляем все <br /> из тела письма
+    const cleanedBody = body.replace(/<br\s*\/?>/gi, "\n");
+    // Разделяем очищенное тело письма по строкам
+    const arrBody = cleanedBody.split("\n");
+    // Инициализируем результат
+    let result = {
+      name: arrBody[1].split(":")[1],
+      address: arrBody[2].split(":")[1],
+      phone: await this.normalizePhoneNumber(arrBody[5].split(":")[1]),
+      id: "Нет номера заявки",
+      comment: "Нет комментария",
+    };
+    return result;
+  }
   async parseBodyEmailGDELU(body: string): Promise<emailOutput> {
     // Удаляем все <br /> из тела письма
     const cleanedBody = body.replace(/<br\s*\/?>/gi, "\n");

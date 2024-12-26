@@ -47,6 +47,46 @@ const run = async () => {
     logger.info("Запуск обработки писем...");
     await emailService.connect();
     logger.info("Подключились к IMAP-серверу");
+    // Парсим письма от джастконнект
+    const emailsJustConnect = await emailService.fetchEmails(
+      "Заявка на подключение"
+    );
+    logger.info(`Получили ${emailsJustConnect.length} писем от JustConnect`);
+    for (let i = 0; i < emailsJustConnect.length; i++) {
+      const email = emailsJustConnect[i];
+      const idEmail = email.uid;
+      const body = email.body;
+      const from = email.from;
+
+      const parsedJustConnect = await emailService.parsedBodyEmailJustConnect(
+        body
+      );
+      logger.info(
+        `Спарсил письмо от JustConnect. name: ${parsedJustConnect.name} || phone: ${parsedJustConnect.phone} || id: ${parsedJustConnect.id}`
+      );
+      try {
+        const contact = await bitrixService.createContact(
+          parsedJustConnect.name,
+          " ",
+          " ",
+          parsedJustConnect.phone,
+          parsedJustConnect.address
+        );
+        logger.info(`Создал контакт ISP: ${contact.result}`);
+        const deal = await bitrixService.createDeal(
+          contact.result,
+          47,
+          parsedJustConnect.address,
+          parsedJustConnect.comment,
+          parsedJustConnect.id
+        );
+        logger.info(`Создал сделку JustConnect: ${deal.result}`);
+        await emailService.moveEmails(idEmail, "ready");
+      } catch (error) {
+        logger.error(`Не удалось создать сделку JustConnect: ${error}`);
+        await emailService.moveEmails(idEmail, "notReady");
+      }
+    }
     // Парсим письма от ISP
     const emailsISP = await emailService.fetchEmails("Заявка");
     logger.info(`Получили ${emailsISP.length} писем от ISP`);
@@ -55,7 +95,7 @@ const run = async () => {
       const idEmail = email.uid;
       const body = email.body;
       const from = email.from;
-
+      console.log(email, idEmail, body, from);
       if (from.includes("ISP <no-reply@isp-vrn.ru>")) {
         const parsedISP = await emailService.parseBodyEmailISP(body);
         logger.info(
@@ -167,6 +207,4 @@ const run = async () => {
   }
 };
 
-setInterval(() => {
-  run();
-}, 1000 * 60 * 5); // 5 минут
+run();
