@@ -207,4 +207,6 @@ const run = async () => {
   }
 };
 
-run();
+setInterval(() => {
+  run();
+}, 1000 * 60 * 5); // 5 минут
