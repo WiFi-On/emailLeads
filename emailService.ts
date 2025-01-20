@@ -304,16 +304,25 @@ class EmailService {
     }
   }
   async normalizePhoneNumber(phoneNumber: string): Promise<string> {
-    // Убираем все символы и пробелы
+    // Убираем все символы, кроме цифр
     const cleanedNumber = phoneNumber.replace(/\D/g, "");
 
-    // Если номер начинается с "8" или "7", заменяем их на "+7"
+    // Если номер начинается с "8", заменяем её на "+7"
     if (cleanedNumber.startsWith("8")) {
       return "+7" + cleanedNumber.slice(1);
-    } else if (cleanedNumber.startsWith("7")) {
+    }
+
+    // Если номер начинается с "7", добавляем "+"
+    if (cleanedNumber.startsWith("7")) {
+      return "+" + cleanedNumber;
+    }
+
+    // Если номер содержит только локальный формат (например, "9236516319"), добавляем "+7"
+    if (cleanedNumber.length === 10) {
       return "+7" + cleanedNumber;
     }
 
+    // Возвращаем номер как есть для всех других случаев
     return cleanedNumber;
   }
 }
